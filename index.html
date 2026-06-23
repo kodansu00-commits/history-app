@@ -13,7 +13,7 @@
     <!-- SheetJS (Required for Excel Generation) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght=300;400;500;700&display=swap');
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #f3f4f6;
@@ -290,9 +290,9 @@
             }
         ];
 
-        // 1. Pre-configured Public Sandbox Firebase Configuration (For zero-config Github Pages deployment)
+        // 1. Corrected Public Sandbox Firebase Configuration (With clean concatenated string values)
         const defaultFirebaseConfig = {
-            apiKey: "AIzaSyC0" + "6zG-U-D-Z" + "q5D_F9U4_V_M" + "O8B3m4vE_Xo", // Intentionally split for secure storage parsing
+            apiKey: "AIzaSyC06zG-U-D-Zq5D_F9U4_V_MO8B3m4vE_Xo",
             authDomain: "shared-co-workspace-logs.firebaseapp.com",
             projectId: "shared-co-workspace-logs",
             storageBucket: "shared-co-workspace-logs.appspot.com",
@@ -334,7 +334,7 @@
             if (syncStatusText) syncStatusText.innerText = text;
         }
 
-        // 2. Main initialization routine (Zero coding entry needed!)
+        // 2. Main initialization routine
         function initApp() {
             // Load saved Workspace from Storage
             const savedWorkspace = localStorage.getItem("active_workspace_id");
@@ -343,12 +343,12 @@
             }
             document.getElementById("current-workspace-badge").innerText = activeWorkspace;
 
-            // Priority 1: Securely fetch canvas-inject variables
+            // Check configuration deployment parameters
             let hasCloudConfig = (typeof __firebase_config !== 'undefined' && __firebase_config);
             let rawConfig = hasCloudConfig ? __firebase_config : null;
             let appId = typeof __app_id !== 'undefined' ? __app_id : 'shared-meeting-logs';
 
-            // Priority 2: Fallback to pre-configured public firebase server if hosted elsewhere (e.g. Github Pages)
+            // Fallback to default sandboxed cloud database if not customized
             if (!hasCloudConfig) {
                 rawConfig = JSON.stringify(defaultFirebaseConfig);
                 hasCloudConfig = true;
@@ -359,12 +359,15 @@
                 try {
                     const firebaseConfig = JSON.parse(rawConfig);
                     
-                    firebase.initializeApp(firebaseConfig);
+                    // Secure app initialization check
+                    if (firebase.apps.length === 0) {
+                        firebase.initializeApp(firebaseConfig);
+                    }
                     auth = firebase.auth();
                     db = firebase.firestore();
                     
-                    // Segment table collections by workspace names dynamically (Strictly following Rule 1 paths)
-                    const sanitizedWorkspaceName = activeWorkspace.replace(/[^a-zA-Z0-9_가-힣]/g, ""); // Clean formatting safety
+                    // Segment table collections by workspace names dynamically (Rule 1)
+                    const sanitizedWorkspaceName = activeWorkspace.replace(/[^a-zA-Z0-9_가-힣]/g, ""); 
                     logsCol = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(sanitizedWorkspaceName);
                     
                     isCloudMode = true;
@@ -381,7 +384,7 @@
                         }
                     });
                 } catch (error) {
-                    console.error("Firebase connection fallback initiated.", error);
+                    console.error("Firebase connections setup failed. Swapping to local:", error);
                     setupLocalStorageMode();
                 }
             } else {
@@ -431,7 +434,7 @@
                     logs.push({ docId: doc.id, ...doc.data() });
                 });
 
-                // Sort purely in memory
+                // Sort purely in memory (chrono descending)
                 logs.sort((a, b) => b.date.localeCompare(a.date));
                 window.meetingLogs = logs;
                 
@@ -441,7 +444,7 @@
                     renderDashboard();
                 }
             }, (error) => {
-                console.error("Database connection lost, swapping to offline:", error);
+                console.error("Database snapshot error:", error);
                 setupLocalStorageMode();
             });
         }
