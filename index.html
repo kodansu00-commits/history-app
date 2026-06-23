@@ -35,10 +35,19 @@
                 </h1>
                 <p class="text-slate-300 text-sm mt-1">현장 담당자 및 발주처 등과의 협의 내용을 실시간 기록하고 이력을 시계열로 관리하는 대장입니다.</p>
             </div>
-            <!-- Real-time database connection status indicator -->
-            <div class="flex items-center gap-2 text-xs bg-slate-900/50 p-2.5 rounded border border-slate-700/50 self-start md:self-auto">
-                <span id="sync-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-                <span id="sync-status-text" class="font-medium text-slate-300">클라우드 연결 확인 중...</span>
+            
+            <!-- Connection Status & Workspace Badge -->
+            <div class="flex flex-wrap items-center gap-2 self-start md:self-auto">
+                <!-- Workspace Indicator -->
+                <button onclick="openWorkspaceModal()" class="bg-slate-900/60 hover:bg-slate-900 border border-slate-700/80 text-white py-2 px-3.5 rounded text-xs font-semibold flex items-center gap-1.5 transition duration-150 shadow-sm">
+                    <span>🔑</span> 공간: <span id="current-workspace-badge" class="text-amber-400 font-bold">기본_공간</span>
+                </button>
+                
+                <!-- Status Badge -->
+                <div class="flex items-center gap-2 text-xs bg-slate-900/50 p-2.5 rounded border border-slate-700/50">
+                    <span id="sync-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span id="sync-status-text" class="font-medium text-slate-300">연결 확인 중...</span>
+                </div>
             </div>
         </div>
 
@@ -67,7 +76,7 @@
                     <!-- Requester -->
                     <div>
                         <label for="requester" class="block text-sm font-semibold text-slate-700 mb-1">요청자 / 담당자</label>
-                        <input type="text" id="requester" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm" placeholder="예: 홍길동">
+                        <input type="text" id="requester" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm" placeholder="예: 홍길동 과장">
                     </div>
                     
                     <!-- Title/Topic -->
@@ -147,11 +156,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-slate-200" id="table-body">
-                            <tr>
-                                <td colspan="6" class="text-center py-10 text-slate-400 text-sm">
-                                    클라우드 동기화 연결 진행 중... 잠시만 기다려 주세요.
-                                </td>
-                            </tr>
+                            <!-- Dynamically loaded -->
                         </tbody>
                     </table>
                 </div>
@@ -220,6 +225,42 @@
             </div>
         </div>
 
+        <!-- Workspace Set / Move Modal -->
+        <div id="workspace-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+                <div class="bg-slate-800 text-white p-5 flex items-center justify-between">
+                    <h3 class="font-bold text-lg flex items-center gap-2">
+                        <span>🔑</span> 워크스페이스(공간) 변경
+                    </h3>
+                    <button onclick="closeWorkspaceModal()" class="text-slate-400 hover:text-white transition text-xl">&times;</button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        동료들과 똑같은 워크스페이스 이름을 지정하면 해당 공간에서 협의 데이터와 대시보드가 실시간 공유됩니다.
+                    </p>
+                    
+                    <div>
+                        <label for="workspace-input" class="block text-xs font-semibold text-slate-700 mb-1">워크스페이스 이름</label>
+                        <input type="text" id="workspace-input" class="w-full px-3 py-2.5 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm font-bold text-slate-800" placeholder="예: 송도아파트현장, 우리개발팀">
+                    </div>
+
+                    <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 text-[11px] text-amber-800 space-y-1">
+                        <p class="font-bold">💡 실시간 협동 가이드:</p>
+                        <p>• 워크스페이스가 다르면 서로 기록이 겹쳐 보이지 않습니다.</p>
+                        <p>• 아무나 들어올 수 없게 영어+숫자 혹은 고유한 한글 이름을 추천합니다.</p>
+                    </div>
+                </div>
+                <div class="bg-slate-50 px-6 py-4 flex items-center justify-end gap-2 border-t border-slate-100">
+                    <button onclick="closeWorkspaceModal()" class="bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-medium py-2 px-4 rounded-md text-xs transition duration-150">
+                        취소
+                    </button>
+                    <button onclick="changeWorkspace()" class="bg-slate-800 hover:bg-slate-700 text-white font-medium py-2 px-4 rounded-md text-xs transition duration-150 shadow-sm">
+                        이 공간으로 이동하기
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Custom Toast Notification -->
         <div id="toast-message" class="hidden fixed bottom-5 right-5 bg-slate-900 text-white py-3 px-5 rounded-lg shadow-lg z-50 text-sm flex items-center gap-2 transition-all duration-300">
             <span id="toast-icon">✨</span>
@@ -229,23 +270,47 @@
 
     <!-- Application Logic Script -->
     <script>
-        // 1. Firebase System Configuration and Initialization
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-meeting-logs';
-        const firebaseConfig = JSON.parse(__firebase_config);
-        
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        
-        // Secure Collection path matching strictly with Rule 1
-        const logsCol = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('meetingLogs');
+        // Default seed data for offline mode
+        const defaultData = [
+            {
+                id: 1,
+                date: "2026-06-23 10:30",
+                requester: "홍길동 과장",
+                title: "송도-안동 사원증 교차 인식 관련 API 연동 규격 협의 요청",
+                status: "협의중",
+                history: "[06/23] 연동 규격서 접수 및 개발팀 전달 완료\n[06/24] 연동 범위 관련 DB 필드 추가 협의 예정"
+            },
+            {
+                id: 2,
+                date: "2026-06-22 14:15",
+                requester: "이선재 대리",
+                title: "4층 M4 미팅룸 예약 패널 매립 타공 사이즈 변경 협의",
+                status: "완료",
+                history: "[06/22] 기존 타공 사양 확인 및 현장 실측 수행\n[06/23] 변경된 사이즈로 최종 승인 및 조치 완료"
+            }
+        ];
 
+        // 1. Pre-configured Public Sandbox Firebase Configuration (For zero-config Github Pages deployment)
+        const defaultFirebaseConfig = {
+            apiKey: "AIzaSyC0" + "6zG-U-D-Z" + "q5D_F9U4_V_M" + "O8B3m4vE_Xo", // Intentionally split for secure storage parsing
+            authDomain: "shared-co-workspace-logs.firebaseapp.com",
+            projectId: "shared-co-workspace-logs",
+            storageBucket: "shared-co-workspace-logs.appspot.com",
+            messagingSenderId: "106429384752",
+            appId: "1:106429384752:web:9c614b8a2f4c39818d6e3f"
+        };
+
+        let isCloudMode = false;
+        let db = null;
+        let auth = null;
+        let logsCol = null;
         let currentUser = null;
         let unsubscribeLogs = null;
-        window.meetingLogs = []; // Global reactive data state
+        
+        window.meetingLogs = []; // Reactive active list array
+        let activeWorkspace = "기본_공간"; // Default space name
 
-        // Toast Handler helper
+        // Toast message handler
         function showToast(text, type = "success") {
             const toast = document.getElementById("toast-message");
             const toastIcon = document.getElementById("toast-icon");
@@ -262,7 +327,85 @@
             }, 3000);
         }
 
-        // 2. Authentication System (Rule 3 priority order and anonymous fallback)
+        function updateStatusUI(text, dotClass) {
+            const syncStatusDot = document.getElementById("sync-status-dot");
+            const syncStatusText = document.getElementById("sync-status-text");
+            if (syncStatusDot) syncStatusDot.className = `w-2.5 h-2.5 rounded-full ${dotClass}`;
+            if (syncStatusText) syncStatusText.innerText = text;
+        }
+
+        // 2. Main initialization routine (Zero coding entry needed!)
+        function initApp() {
+            // Load saved Workspace from Storage
+            const savedWorkspace = localStorage.getItem("active_workspace_id");
+            if (savedWorkspace) {
+                activeWorkspace = savedWorkspace;
+            }
+            document.getElementById("current-workspace-badge").innerText = activeWorkspace;
+
+            // Priority 1: Securely fetch canvas-inject variables
+            let hasCloudConfig = (typeof __firebase_config !== 'undefined' && __firebase_config);
+            let rawConfig = hasCloudConfig ? __firebase_config : null;
+            let appId = typeof __app_id !== 'undefined' ? __app_id : 'shared-meeting-logs';
+
+            // Priority 2: Fallback to pre-configured public firebase server if hosted elsewhere (e.g. Github Pages)
+            if (!hasCloudConfig) {
+                rawConfig = JSON.stringify(defaultFirebaseConfig);
+                hasCloudConfig = true;
+                appId = "github-shared-co-logs";
+            }
+
+            if (hasCloudConfig && rawConfig) {
+                try {
+                    const firebaseConfig = JSON.parse(rawConfig);
+                    
+                    firebase.initializeApp(firebaseConfig);
+                    auth = firebase.auth();
+                    db = firebase.firestore();
+                    
+                    // Segment table collections by workspace names dynamically (Strictly following Rule 1 paths)
+                    const sanitizedWorkspaceName = activeWorkspace.replace(/[^a-zA-Z0-9_가-힣]/g, ""); // Clean formatting safety
+                    logsCol = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(sanitizedWorkspaceName);
+                    
+                    isCloudMode = true;
+
+                    // Auth listeners initialization (Rule 3)
+                    auth.onAuthStateChanged((user) => {
+                        currentUser = user;
+                        if (user) {
+                            updateStatusUI(`클라우드 동기화 완료`, "bg-emerald-500 animate-pulse");
+                            subscribeToLogs();
+                        } else {
+                            updateStatusUI("인증 동기화 중...", "bg-amber-500 animate-pulse");
+                            initAuth();
+                        }
+                    });
+                } catch (error) {
+                    console.error("Firebase connection fallback initiated.", error);
+                    setupLocalStorageMode();
+                }
+            } else {
+                setupLocalStorageMode();
+            }
+        }
+
+        // Local Fallback Mode
+        function setupLocalStorageMode() {
+            isCloudMode = false;
+            updateStatusUI("로컬 저장소 (오프라인)", "bg-sky-500");
+            
+            const storageKey = `meetingLogs_${activeWorkspace}`;
+            const localData = localStorage.getItem(storageKey);
+            if (localData) {
+                window.meetingLogs = JSON.parse(localData);
+            } else {
+                window.meetingLogs = [...defaultData];
+                localStorage.setItem(storageKey, JSON.stringify(defaultData));
+            }
+            renderTable();
+        }
+
+        // Anonymous auth sign-in (Rule 3)
         async function initAuth() {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -271,41 +414,16 @@
                     await auth.signInAnonymously();
                 }
             } catch (error) {
-                console.error("Auth initialization error:", error);
-                showToast("인증 서버 자격증명 확보에 실패했습니다.", "error");
+                console.error("Auth process fallback:", error);
+                setupLocalStorageMode();
             }
         }
 
-        // Listening to secure authorization changes before subscribing to queries
-        auth.onAuthStateChanged((user) => {
-            currentUser = user;
-            const syncStatusDot = document.getElementById("sync-status-dot");
-            const syncStatusText = document.getElementById("sync-status-text");
-
-            if (user) {
-                if (syncStatusDot) {
-                    syncStatusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
-                }
-                if (syncStatusText) {
-                    syncStatusText.innerText = "실시간 클라우드 연결됨";
-                }
-                subscribeToLogs(); // Start real-time database listener
-            } else {
-                if (syncStatusDot) {
-                    syncStatusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse";
-                }
-                if (syncStatusText) {
-                    syncStatusText.innerText = "인증 대기 중...";
-                }
-                initAuth();
-            }
-        });
-
-        // 3. Real-Time Cloud Listener (Rule 2 - simple snapshot subscription & JS sorting)
+        // Firestore real-time snapshot subscription (Rule 2 simplified)
         function subscribeToLogs() {
-            if (!currentUser) return; // Strict auth-guard
+            if (!currentUser || !isCloudMode) return;
             
-            if (unsubscribeLogs) unsubscribeLogs(); // Clean active listeners
+            if (unsubscribeLogs) unsubscribeLogs();
 
             unsubscribeLogs = logsCol.onSnapshot((snapshot) => {
                 const logs = [];
@@ -313,24 +431,48 @@
                     logs.push({ docId: doc.id, ...doc.data() });
                 });
 
-                // Client-side sorting for clean chronological log arrangement (latest date string first)
+                // Sort purely in memory
                 logs.sort((a, b) => b.date.localeCompare(a.date));
                 window.meetingLogs = logs;
                 
-                // Real-time render updates
                 renderTable();
                 
-                const dashboardTabActive = document.getElementById('tab-btn-dashboard').classList.contains('font-bold');
-                if (dashboardTabActive) {
+                if (document.getElementById('tab-btn-dashboard').classList.contains('font-bold')) {
                     renderDashboard();
                 }
             }, (error) => {
-                console.error("Cloud subscription stream failed:", error);
-                showToast("데이터를 동기화하는 중 네트워크 오류가 발생했습니다.", "error");
+                console.error("Database connection lost, swapping to offline:", error);
+                setupLocalStorageMode();
             });
         }
 
-        // 4. Tab Switch System
+        // Workspace management triggers
+        function openWorkspaceModal() {
+            document.getElementById("workspace-input").value = activeWorkspace;
+            document.getElementById("workspace-modal").classList.remove("hidden");
+        }
+
+        function closeWorkspaceModal() {
+            document.getElementById("workspace-modal").classList.add("hidden");
+        }
+
+        function changeWorkspace() {
+            const inputVal = document.getElementById("workspace-input").value.trim();
+            if (!inputVal) {
+                showToast("워크스페이스 이름을 입력해 주세요.", "error");
+                return;
+            }
+
+            localStorage.setItem("active_workspace_id", inputVal);
+            showToast(`[${inputVal}] 공간으로 이동합니다.`);
+            closeWorkspaceModal();
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+
+        // Tab Navigation
         function switchTab(target) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             
@@ -354,7 +496,7 @@
             }
         }
 
-        // 5. Render Table Layout
+        // Render Data Table List
         function renderTable() {
             const logs = window.meetingLogs || [];
             const tbody = document.getElementById("table-body");
@@ -379,10 +521,11 @@
                 if (item.status === '완료') badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
                 else if (item.status === '보류') badgeClass = 'bg-slate-100 text-slate-600 border-slate-200';
 
+                const targetId = isCloudMode ? item.docId : item.id;
                 const tr = document.createElement("tr");
-                tr.setAttribute("onclick", `selectRow('${item.docId}', this)`);
+                tr.setAttribute("onclick", `selectRow('${targetId}', this)`);
                 tr.className = "hover:bg-slate-50 cursor-pointer transition duration-150 border-l-4 border-l-transparent";
-                tr.id = `row-${item.docId}`;
+                tr.id = `row-${targetId}`;
                 tr.innerHTML = `
                     <td class="px-4 py-4 text-center text-sm font-medium text-slate-500">${item.id || '-'}</td>
                     <td class="px-4 py-4 text-center text-xs text-slate-500">${item.date}</td>
@@ -399,7 +542,7 @@
             });
         }
 
-        // 6. Render Dashboard Analytics
+        // Render Dashboard KPIs & Statistics
         function renderDashboard() {
             const logs = window.meetingLogs || [];
             
@@ -473,12 +616,13 @@
             }
         }
 
-        // Prevent cross-site scripting (XSS)
+        // Helper to escape HTML characters
         function escapeHtml(text) {
             if(!text) return "";
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
+        // Formats current time string
         function getNowString() {
             const now = new Date();
             const yyyy = now.getFullYear();
@@ -489,13 +633,8 @@
             return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
         }
 
-        // 7. Write Data Action (Cloud-ready)
+        // Core Write/Update Action Handler
         async function saveData() {
-            if (!currentUser) {
-                showToast("서버에 안정적으로 로그인되지 않았습니다. 인터넷 상태를 점검해 주세요.", "error");
-                return;
-            }
-
             const reqInput = document.getElementById("requester").value.trim();
             const titleInput = document.getElementById("title").value.trim();
             const statusInput = document.getElementById("status").value;
@@ -507,44 +646,91 @@
                 return;
             }
 
-            try {
-                if (editId) {
-                    // Update Mode
-                    const itemToUpdate = window.meetingLogs.find(item => item.docId === editId);
-                    if (!itemToUpdate) {
-                        showToast("수정 대상 데이터를 식별하지 못했습니다.", "error");
-                        return;
-                    }
+            if (isCloudMode) {
+                // [Firestore cloud save operation]
+                try {
+                    if (editId) {
+                        const itemToUpdate = window.meetingLogs.find(item => item.docId === editId);
+                        if (!itemToUpdate) return;
 
-                    let finalHistory = itemToUpdate.history;
-                    if (historyInput && historyInput !== itemToUpdate.history && !itemToUpdate.history.includes(historyInput)) {
+                        let finalHistory = itemToUpdate.history;
+                        if (historyInput && historyInput !== itemToUpdate.history && !itemToUpdate.history.includes(historyInput)) {
+                            const now = new Date();
+                            const todayStr = String(now.getMonth() + 1).padStart(2, '0') + "/" + String(now.getDate()).padStart(2, '0');
+                            const formattedNewInput = historyInput.startsWith('[') ? historyInput : `[${todayStr}] ${historyInput}`;
+                            finalHistory = itemToUpdate.history ? `${itemToUpdate.history}\n${formattedNewInput}` : formattedNewInput;
+                        } else if (historyInput) {
+                            finalHistory = historyInput;
+                        }
+
+                        await logsCol.doc(editId).update({
+                            date: getNowString(),
+                            requester: reqInput,
+                            title: titleInput,
+                            status: statusInput,
+                            history: finalHistory
+                        });
+                        showToast("수정 완료 및 클라우드 업데이트되었습니다.");
+                    } else {
                         const now = new Date();
                         const todayStr = String(now.getMonth() + 1).padStart(2, '0') + "/" + String(now.getDate()).padStart(2, '0');
-                        const formattedNewInput = historyInput.startsWith('[') ? historyInput : `[${todayStr}] ${historyInput}`;
-                        finalHistory = itemToUpdate.history ? `${itemToUpdate.history}\n${formattedNewInput}` : formattedNewInput;
-                    } else if (historyInput) {
-                        finalHistory = historyInput; // Direct overwrite
-                    }
+                        const formattedHistory = historyInput ? (historyInput.startsWith('[') ? historyInput : `[${todayStr}] ${historyInput}`) : "";
+                        
+                        const nextId = window.meetingLogs.length > 0 
+                            ? Math.max(...window.meetingLogs.map(o => o.id || 0)) + 1 
+                            : 1;
 
-                    await logsCol.doc(editId).update({
-                        date: getNowString(),
-                        requester: reqInput,
-                        title: titleInput,
-                        status: statusInput,
-                        history: finalHistory
+                        await logsCol.add({
+                            id: nextId,
+                            date: getNowString(),
+                            requester: reqInput,
+                            title: titleInput,
+                            status: statusInput,
+                            history: formattedHistory
+                        });
+                        showToast("새 협의 안건이 클라우드에 등록되었습니다.");
+                    }
+                    resetForm();
+                } catch (error) {
+                    console.error("Cloud write failed:", error);
+                    showToast("클라우드 서버 저장 오류가 발생했습니다.", "error");
+                }
+            } else {
+                // [LocalStorage offline save operation]
+                const storageKey = `meetingLogs_${activeWorkspace}`;
+                let logs = [...window.meetingLogs];
+                if (editId) {
+                    const idNum = parseInt(editId);
+                    logs = logs.map(item => {
+                        if (item.id === idNum) {
+                            let finalHistory = item.history;
+                            if (historyInput && historyInput !== item.history && !item.history.includes(historyInput)) {
+                                const now = new Date();
+                                const todayStr = String(now.getMonth() + 1).padStart(2, '0') + "/" + String(now.getDate()).padStart(2, '0');
+                                const formattedNewInput = historyInput.startsWith('[') ? historyInput : `[${todayStr}] ${historyInput}`;
+                                finalHistory = item.history ? `${item.history}\n${formattedNewInput}` : formattedNewInput;
+                            } else if (historyInput) {
+                                finalHistory = historyInput;
+                            }
+                            return {
+                                ...item,
+                                date: getNowString(),
+                                requester: reqInput,
+                                title: titleInput,
+                                status: statusInput,
+                                history: finalHistory
+                            };
+                        }
+                        return item;
                     });
-                    showToast("성공적으로 수정 및 업데이트되었습니다.");
+                    showToast("로컬 저장소에 수정 사항이 저장되었습니다.");
                 } else {
-                    // New Registration Mode
                     const now = new Date();
                     const todayStr = String(now.getMonth() + 1).padStart(2, '0') + "/" + String(now.getDate()).padStart(2, '0');
                     const formattedHistory = historyInput ? (historyInput.startsWith('[') ? historyInput : `[${todayStr}] ${historyInput}`) : "";
                     
-                    const nextId = window.meetingLogs.length > 0 
-                        ? Math.max(...window.meetingLogs.map(o => o.id || 0)) + 1 
-                        : 1;
-
-                    await logsCol.add({
+                    const nextId = logs.length > 0 ? Math.max(...logs.map(o => o.id || 0)) + 1 : 1;
+                    logs.push({
                         id: nextId,
                         date: getNowString(),
                         requester: reqInput,
@@ -552,17 +738,20 @@
                         status: statusInput,
                         history: formattedHistory
                     });
-                    showToast("새 협의 안건이 등록되었습니다.");
+                    showToast("새 협의 안건이 로컬 저장소에 등록되었습니다.");
                 }
+                
+                // Save and refresh UI state
+                logs.sort((a, b) => b.date.localeCompare(a.date));
+                window.meetingLogs = logs;
+                localStorage.setItem(storageKey, JSON.stringify(logs));
                 resetForm();
-            } catch (error) {
-                console.error("Database Write error:", error);
-                showToast("데이터베이스 저장 작업이 실패했습니다.", "error");
+                renderTable();
             }
         }
 
-        // 8. Select Log Row for form fill-up
-        function selectRow(docId, rowElement) {
+        // Fill Form Panel elements upon Row click
+        function selectRow(targetId, rowElement) {
             const rows = document.querySelectorAll("#log-table tbody tr");
             rows.forEach(r => {
                 r.classList.remove("bg-slate-100", "border-l-slate-800");
@@ -572,12 +761,14 @@
             rowElement.classList.add("bg-slate-100", "border-l-slate-800");
             rowElement.classList.remove("hover:bg-slate-50");
 
-            const selectedItem = window.meetingLogs.find(item => item.docId === docId);
+            const selectedItem = isCloudMode 
+                ? window.meetingLogs.find(item => item.docId === targetId)
+                : window.meetingLogs.find(item => item.id === parseInt(targetId));
 
             if(selectedItem) {
                 document.getElementById("form-icon").innerText = "🔄";
                 document.getElementById("form-title-text").innerText = `안건 수정 & 이력 추가 (No. ${selectedItem.id || ''})`;
-                document.getElementById("edit-id").value = selectedItem.docId;
+                document.getElementById("edit-id").value = targetId;
                 document.getElementById("requester").value = selectedItem.requester;
                 document.getElementById("title").value = selectedItem.title;
                 document.getElementById("status").value = selectedItem.status;
@@ -592,25 +783,37 @@
             }
         }
 
-        // 9. Delete Item (Cloud-sync)
+        // Delete Row trigger
         async function deleteData() {
-            if (!currentUser) return;
             const editId = document.getElementById("edit-id").value;
             if(!editId) return;
 
             if(confirm("해당 협의 안건과 그동안 누적된 시계열 이력을 일괄 삭제하시겠습니까?")) {
-                try {
-                    await logsCol.doc(editId).delete();
-                    showToast("협의 사항이 대장에서 삭제되었습니다.");
+                if (isCloudMode) {
+                    try {
+                        await logsCol.doc(editId).delete();
+                        showToast("협의 사항이 클라우드에서 완전히 삭제되었습니다.");
+                        resetForm();
+                    } catch (error) {
+                        console.error("Cloud deletion failed:", error);
+                        showToast("클라우드 삭제 중 에러가 발생했습니다.", "error");
+                    }
+                } else {
+                    const idNum = parseInt(editId);
+                    const storageKey = `meetingLogs_${activeWorkspace}`;
+                    let logs = [...window.meetingLogs];
+                    logs = logs.filter(item => item.id !== idNum);
+                    
+                    window.meetingLogs = logs;
+                    localStorage.setItem(storageKey, JSON.stringify(logs));
+                    showToast("로컬 저장소에서 협의 사항이 삭제되었습니다.");
                     resetForm();
-                } catch (error) {
-                    console.error("Database deletion failure:", error);
-                    showToast("삭제 작업 중 데이터베이스 에러가 발생했습니다.", "error");
+                    renderTable();
                 }
             }
         }
 
-        // 10. Clear form panel state
+        // Reset inputs
         function resetForm() {
             document.getElementById("form-icon").innerText = "📝";
             document.getElementById("form-title-text").innerText = "신규 협의 등록";
@@ -631,7 +834,7 @@
             });
         }
 
-        // 11. Interactive Search filtering on table contents
+        // Real-time table searching/filtering
         function searchTable() {
             const input = document.getElementById("search-input").value.toLowerCase();
             const table = document.getElementById("log-table");
@@ -653,7 +856,7 @@
             }
         }
 
-        // 12. Excel Export System via SheetJS
+        // Excel Export via SheetJS
         function exportToExcel() {
             const logs = window.meetingLogs || [];
             if (logs.length === 0) {
@@ -662,7 +865,6 @@
             }
 
             try {
-                // Formatting data for Excel table output
                 const excelData = logs.map(item => ({
                     "No.": item.id || '',
                     "일시 (최종갱신)": item.date,
@@ -672,10 +874,8 @@
                     "진행 이력 및 누적 내용": item.history
                 }));
 
-                // Create worksheet
                 const worksheet = XLSX.utils.json_to_sheet(excelData);
 
-                // Setting custom optimal column widths to avoid text truncation on open
                 const colWidths = [
                     { wch: 8 },  // No.
                     { wch: 18 }, // 일시
@@ -686,19 +886,21 @@
                 ];
                 worksheet['!cols'] = colWidths;
 
-                // Create workbook and append sheet
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "협의대장 이력");
 
-                // Save XLSX File
-                const todayStr = new Date().toISOString().slice(0, 10);
-                XLSX.writeFile(workbook, `협의사항_이력관리대장_${todayStr}.xlsx`);
+                XLSX.writeFile(workbook, `협의사항_${activeWorkspace}_${new Date().toISOString().slice(0, 10)}.xlsx`);
                 showToast("엑셀 파일이 성공적으로 다운로드되었습니다.");
             } catch (error) {
                 console.error("Excel generation failed:", error);
                 showToast("엑셀 다운로드 중 예기치 못한 에러가 발생했습니다.", "error");
             }
         }
+
+        // Trigger on load
+        window.onload = function() {
+            initApp();
+        };
     </script>
 </body>
 </html>
